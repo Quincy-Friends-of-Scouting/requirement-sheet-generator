@@ -1,0 +1,26 @@
+node_modules
+.DS_Store
+dist
+dist-ssr
+*.local
+.env
+.nitro
+.amplify-hosting
+.tanstack
+.wrangler
+.output
+.vinxi
+__unconfig*
+todos.json
+
+# generated sample PDFs
+sample-output/
+
+# Working notes for this repo's maintainer — deliberately untracked (the repo
+# is public; CLAUDE.md carries AWS account details and cross-project context).
+CLAUDE.md
+
+# Output of the legacy Python scripts — regenerable from legacy/badges/*.py.
+# genealogy.pdf is kept as the layout reference the README compares against.
+legacy/output/*
+!legacy/output/genealogy.pdf
