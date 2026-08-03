@@ -2,6 +2,7 @@
   "name": "requirement-sheet-generator",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.30.3",
   "imports": {
     "#/*": "./src/*"
   },
