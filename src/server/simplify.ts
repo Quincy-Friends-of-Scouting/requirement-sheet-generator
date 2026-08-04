@@ -21,7 +21,7 @@ import type { Requirement } from '../lib/requirements'
 
 const MODEL = 'claude-haiku-4-5'
 
-const SYSTEM = `You reformat Scouts BSA merit badge requirements so they fit on a one-page counselor sign-off sheet.
+const SYSTEM = `You reformat Scouting America merit badge requirements so they fit on a one-page counselor sign-off sheet.
 
 You are given the official requirement text. Return the same requirements, restructured as a tree and condensed.
 

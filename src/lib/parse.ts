@@ -16,7 +16,7 @@ interface Marker {
 }
 
 /**
- * Ranks are ordered by how BSA requirement sheets nest: arabic numerals at the
+ * Ranks are ordered by how merit badge requirements nest: arabic numerals at the
  * top, then letters, then parenthesized numerals. A parenthesized letter is
  * treated as a letter so "(a)" and "a." don't split into two levels.
  */
@@ -126,6 +126,37 @@ function toRows(input: string): Array<Row> {
   return rows
 }
 
+/** For each roman-ambiguous letter, the letter that would precede it in an a-b-c list. */
+const ALPHABET_PREDECESSOR = new Map([
+  ['i', 'h'],
+  ['v', 'u'],
+  ['x', 'w'],
+])
+
+function markerLetter(label: string): string | undefined {
+  return /^\(?([a-z])[.)]$/i.exec(label)?.[1]?.toLowerCase()
+}
+
+/**
+ * "i." is both the ninth letter and roman one, and the marker alone cannot say
+ * which. The sequence can: a list that just passed "h." is counting letters,
+ * while anything else reaching "i." is starting a roman sub-list.
+ *
+ * Without this, `a. / i. / ii.` parses as three levels — "i." a sibling of "a."
+ * and "ii." a child of "i." — which is wrong in both shape and depth. Same
+ * reasoning covers "v." after "u." and "x." after "w.".
+ */
+function resolveRomans(rows: Array<Row>): Array<Row> {
+  return rows.map((row, i) => {
+    const letter = markerLetter(row.label)
+    const predecessor = letter && ALPHABET_PREDECESSOR.get(letter)
+    if (!predecessor) return row
+
+    const prev = i > 0 ? markerLetter(rows[i - 1].label) : undefined
+    return prev === predecessor ? row : { ...row, rank: 2 }
+  })
+}
+
 /**
  * Some sources indent sub-requirements but reuse arabic numerals at every
  * level. When the markers alone are ambiguous, fall back to indentation.
@@ -141,7 +172,7 @@ function resolveRanks(rows: Array<Row>): Array<Row> {
 }
 
 export function parseRequirements(input: string): Array<Requirement> {
-  const rows = resolveRanks(toRows(stripAnnotations(input)))
+  const rows = resolveRanks(resolveRomans(toRows(stripAnnotations(input))))
   if (!rows.length) return []
 
   const roots: Array<RequirementInput> = []

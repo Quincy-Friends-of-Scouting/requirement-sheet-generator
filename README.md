@@ -56,6 +56,7 @@ refuses regardless — a missing key can never leave the AI path ungated.
 | `pnpm build`         | Production build                                           |
 | `pnpm typecheck`     | `tsc --noEmit`                                             |
 | `pnpm lint`          | ESLint                                                     |
+| `pnpm test`          | Parser checks (synthetic fixtures, no framework)           |
 | `pnpm render:sample` | Render sample PDFs to `sample-output/` without the browser |
 
 `render:sample` is the layout smoke test — compare its output against
@@ -67,8 +68,8 @@ MIT — see [LICENSE](LICENSE).
 
 The license covers the code in this repository. It does not extend to the merit
 badge requirement text that appears in `legacy/badges/` or that users paste into
-the app; those requirements are the property of the Boy Scouts of America and
-are reproduced here only as sample input.
+the app; those requirements are the property of Scouting America and are
+reproduced here only as sample input.
 
 ## Deploying — AWS Amplify Hosting
 
@@ -79,7 +80,7 @@ it. No API Gateway or hand-rolled Lambda is involved; Amplify's own CloudFront
 splits static from compute using `deploy-manifest.json`.
 
 **Amplify's SSR compute runtime never receives environment variables** — they
-reach the *build* only, and Nitro does not read `.env` in production. Both of
+reach the _build_ only, and Nitro does not read `.env` in production. Both of
 this app's secrets are read lazily at request time (Clerk's middleware reads
 `CLERK_SECRET_KEY` per request; `simplify.ts` reads `ANTHROPIC_API_KEY` per
 rewrite), so they are baked from the build env into Nitro's server-only
