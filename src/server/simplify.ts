@@ -3,11 +3,12 @@ import { createServerFn } from '@tanstack/react-start'
 import { auth } from '@clerk/tanstack-react-start/server'
 import { z } from 'zod'
 import {
+  parseRequirements,
   requirementJsonSchema,
   requirementListSchema,
+  stripAnnotations,
   withIds,
 } from '../lib/requirements'
-import { parseRequirements, stripAnnotations } from '../lib/parse'
 import type { Requirement } from '../lib/requirements'
 
 /**

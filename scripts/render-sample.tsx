@@ -9,9 +9,8 @@ import { mkdirSync, readFileSync } from 'node:fs'
 import { createElement } from 'react'
 import { renderToFile } from '@react-pdf/renderer'
 import { BadgePoster, RequirementSheet } from '../src/pdf/RequirementSheet'
-import { parseRequirements } from '../src/lib/parse'
 import { DEFAULT_SHEET } from '../src/lib/sheet'
-import { countNodes } from '../src/lib/requirements'
+import { countNodes, parseRequirements } from '../src/lib/requirements'
 import type { DocumentProps } from '@react-pdf/renderer'
 
 const SOURCE = `1. Do the following:

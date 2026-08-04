@@ -11,7 +11,7 @@
     "dev": "vite dev --port 3000",
     "generate-routes": "tsr generate",
     "build": "vite build",
-    "test": "tsx src/lib/parse.test.ts",
+    "test": "tsx src/lib/requirements.test.ts",
     "preview": "vite preview",
     "lint": "eslint",
     "format": "prettier --write . && eslint --fix",
@@ -31,6 +31,7 @@
     "nitro": "npm:nitro-nightly@3.0.1-20260702-173353-03122331",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "requirement-tree": "github:Quincy-Friends-of-Scouting/requirement-tree",
     "tailwindcss": "^4.1.18",
     "zod": "^4.4.3"
   },
@@ -51,7 +52,8 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",
-      "lightningcss"
+      "lightningcss",
+      "requirement-tree"
     ]
   }
 }

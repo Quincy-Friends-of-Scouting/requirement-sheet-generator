@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { SignInButton } from '@clerk/tanstack-react-start'
 
 import { RequireSignIn } from '../lib/auth'
-import { countNodes, toText } from '../lib/requirements'
-import { parseRequirements } from '../lib/parse'
+import { countNodes, parseRequirements, toText } from '../lib/requirements'
 import { simplifyRequirements } from '../server/simplify'
 import type { Requirement } from '../lib/requirements'
 
