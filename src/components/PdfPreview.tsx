@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePDF } from '@react-pdf/renderer'
 import {
   BadgePoster,
@@ -239,40 +239,46 @@ export default function PdfPreview({
   spec: SheetSpec
   view: PdfView
 }) {
-  const slug = slugify(spec.badgeName)
+  /**
+   * Memoised because the element identity is what drives the rebuild: `Preview`
+   * debounces on `document`, so minting a fresh element on an unrelated parent
+   * re-render would schedule a full PDF build for an edit that cannot have
+   * changed the output.
+   */
+  const doc = useMemo(() => {
+    const slug = slugify(spec.badgeName)
 
-  // `key` matters: every branch renders the same `Preview` type at the same
+    if (view === 'poster') {
+      return {
+        element: <BadgePoster spec={spec} />,
+        filename: `${slug}-sign.pdf`,
+        label: 'Table sign',
+      }
+    }
+    if (view === 'both') {
+      return {
+        element: <CombinedDocument spec={spec} />,
+        filename: `${slug}-sheet-and-sign.pdf`,
+        label: 'Sheet + sign',
+      }
+    }
+    return {
+      element: <RequirementSheet spec={spec} />,
+      filename: `${slug}.pdf`,
+      label: 'Requirement sheet',
+    }
+  }, [spec, view])
+
+  // `key` matters: every view renders the same `Preview` type at the same
   // position, so without it React keeps the previous view's buffers alive and
   // the Download button would briefly serve the old document under the new
   // filename. Remounting costs one "Rendering…" frame on a view switch.
-  if (view === 'poster') {
-    return (
-      <Preview
-        key="poster"
-        document={<BadgePoster spec={spec} />}
-        filename={`${slug}-sign.pdf`}
-        label="Table sign"
-      />
-    )
-  }
-
-  if (view === 'both') {
-    return (
-      <Preview
-        key="both"
-        document={<CombinedDocument spec={spec} />}
-        filename={`${slug}-sheet-and-sign.pdf`}
-        label="Sheet + sign"
-      />
-    )
-  }
-
   return (
     <Preview
-      key="sheet"
-      document={<RequirementSheet spec={spec} />}
-      filename={`${slug}.pdf`}
-      label="Requirement sheet"
+      key={view}
+      document={doc.element}
+      filename={doc.filename}
+      label={doc.label}
     />
   )
 }

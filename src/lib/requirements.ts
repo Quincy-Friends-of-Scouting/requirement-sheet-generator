@@ -196,6 +196,57 @@ export function canOutdent(row: FlatRow) {
   return row.depth > 0
 }
 
+/** Make the row the last child of its previous sibling. */
+function indent(nodes: Array<Requirement>, id: string): Array<Requirement> {
+  const i = nodes.findIndex((n) => n.id === id)
+
+  if (i === 0) return nodes // nothing above it to nest under
+  if (i > 0) {
+    const next = [...nodes]
+    const [moved] = next.splice(i, 1)
+    const prev = next[i - 1]
+    next[i - 1] = { ...prev, children: [...prev.children, moved] }
+    return next
+  }
+
+  return nodes.map((n) => ({ ...n, children: indent(n.children, id) }))
+}
+
+/**
+ * Promote the row to sit just after its former parent. Rows that followed it
+ * under that parent come along as its children, which is how outline editors
+ * behave and keeps the printed order stable.
+ */
+function outdent(nodes: Array<Requirement>, id: string): Array<Requirement> {
+  const pi = nodes.findIndex((n) => n.children.some((c) => c.id === id))
+
+  if (pi !== -1) {
+    const parent = nodes[pi]
+    const at = parent.children.findIndex((c) => c.id === id)
+    const moved = parent.children[at]
+    const trailing = parent.children.slice(at + 1)
+
+    const next = [...nodes]
+    next[pi] = { ...parent, children: parent.children.slice(0, at) }
+    next.splice(pi + 1, 0, {
+      ...moved,
+      children: [...moved.children, ...trailing],
+    })
+    return next
+  }
+
+  return nodes.map((n) => ({ ...n, children: outdent(n.children, id) }))
+}
+
+/** Re-parent one row within its sibling list. */
+export function moveRequirement(
+  nodes: Array<Requirement>,
+  id: string,
+  direction: 'in' | 'out',
+): Array<Requirement> {
+  return direction === 'in' ? indent(nodes, id) : outdent(nodes, id)
+}
+
 /** Round-trip a tree back to the indented text format the parser accepts. */
 export function toText(nodes: Array<Requirement>, depth = 0): string {
   return nodes

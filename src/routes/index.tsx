@@ -1,14 +1,11 @@
 import { Suspense, lazy, useState } from 'react'
 import { ClientOnly, createFileRoute } from '@tanstack/react-router'
-import { SignInButton } from '@clerk/tanstack-react-start'
 
-import { RequireSignIn } from '../lib/auth'
 import { ImageDrop } from '../components/ImageDrop'
 import { RequirementEditor } from '../components/RequirementEditor'
+import { RequirementsInput } from '../components/RequirementsInput'
 import { DEFAULT_SHEET } from '../lib/sheet'
-import { countNodes, toText } from '../lib/requirements'
-import { parseRequirements } from '../lib/parse'
-import { simplifyRequirements } from '../server/simplify'
+import { countNodes } from '../lib/requirements'
 import type { PdfView } from '../components/PdfPreview'
 import type { SheetSpec } from '../lib/sheet'
 
@@ -53,20 +50,9 @@ function PreviewSkeleton() {
   )
 }
 
-const SAMPLE = `1. Do the following:
-a. Explain to your counselor what the words genealogy, ancestor, and descendant mean.
-b. Explain what a family tree is and what information would be kept there.
-2. Do ONE of the following:
-a. Create a time line for yourself or for a relative, then write a short biography based on it.
-b. Keep a journal for six weeks. You must write in it at least once a week.`
-
 function Builder() {
   const [spec, setSpec] = useState<SheetSpec>(DEFAULT_SHEET)
-  const [source, setSource] = useState('')
   const [parts, setParts] = useState<ReadonlyArray<PartId>>(['sheet'])
-  const [busy, setBusy] = useState(false)
-  const [status, setStatus] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
 
   const patch = (part: Partial<SheetSpec>) =>
     setSpec((prev) => ({ ...prev, ...part }))
@@ -89,37 +75,6 @@ function Builder() {
     )
 
   const rowCount = countNodes(spec.requirements)
-
-  function structureOnly() {
-    setError(null)
-    const requirements = parseRequirements(source)
-    patch({ requirements })
-    setStatus(
-      requirements.length
-        ? `Parsed ${countNodes(requirements)} rows from the numbering. Wording unchanged.`
-        : 'Nothing to parse yet.',
-    )
-  }
-
-  async function simplify() {
-    setError(null)
-    setStatus(null)
-    setBusy(true)
-    try {
-      const result = await simplifyRequirements({
-        data: { text: source, badgeName: spec.badgeName || undefined },
-      })
-      patch({ requirements: result.requirements })
-      setStatus(
-        result.note ??
-          `Rewrote ${countNodes(result.requirements)} requirements to fit the sheet.`,
-      )
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
-    } finally {
-      setBusy(false)
-    }
-  }
 
   return (
     <main className="mx-auto grid max-w-350 gap-6 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -154,82 +109,11 @@ function Builder() {
           </div>
         </section>
 
-        <section className="space-y-3 rounded-xl border border-stone-200 bg-white p-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="font-semibold">2. Requirements</h2>
-            <button
-              type="button"
-              onClick={() => setSource(SAMPLE)}
-              className="text-xs text-stone-500 underline"
-            >
-              Load a sample
-            </button>
-          </div>
-
-          <textarea
-            value={source}
-            onChange={(e) => setSource(e.target.value)}
-            rows={10}
-            placeholder="Paste the official requirements here, one per line…"
-            className="w-full rounded-md border border-stone-300 px-3 py-2 font-mono text-sm leading-relaxed"
-          />
-
-          <div className="flex flex-wrap items-center gap-2">
-            <RequireSignIn
-              fallback={
-                <SignInButton mode="modal">
-                  <button
-                    type="button"
-                    className="rounded-md bg-emerald-700 px-3 py-2 text-sm text-white hover:bg-emerald-600"
-                  >
-                    Sign in to shorten with AI
-                  </button>
-                </SignInButton>
-              }
-              unconfigured={
-                <button
-                  type="button"
-                  disabled
-                  title="Set VITE_CLERK_PUBLISHABLE_KEY and ANTHROPIC_API_KEY to enable this"
-                  className="rounded-md bg-emerald-700 px-3 py-2 text-sm text-white opacity-40"
-                >
-                  Shorten with AI (not configured)
-                </button>
-              }
-            >
-              <button
-                type="button"
-                onClick={() => void simplify()}
-                disabled={busy || !source.trim()}
-                className="rounded-md bg-emerald-700 px-3 py-2 text-sm text-white hover:bg-emerald-600 disabled:opacity-40"
-              >
-                {busy ? 'Rewriting…' : 'Shorten with AI'}
-              </button>
-            </RequireSignIn>
-
-            <button
-              type="button"
-              onClick={structureOnly}
-              disabled={!source.trim()}
-              className="rounded-md border border-stone-300 px-3 py-2 text-sm hover:bg-stone-100 disabled:opacity-40"
-            >
-              Use as-is
-            </button>
-
-            {spec.requirements.length ? (
-              <button
-                type="button"
-                onClick={() => setSource(toText(spec.requirements))}
-                className="text-xs text-stone-500 underline"
-              >
-                Copy edits back to the box
-              </button>
-            ) : null}
-          </div>
-
-          {status ? <p className="text-xs text-stone-600">{status}</p> : null}
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
-        </section>
+        <RequirementsInput
+          badgeName={spec.badgeName}
+          requirements={spec.requirements}
+          onRequirements={(requirements) => patch({ requirements })}
+        />
 
         <section className="space-y-3 rounded-xl border border-stone-200 bg-white p-4">
           <div className="flex items-baseline justify-between gap-3">

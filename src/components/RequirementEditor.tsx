@@ -4,65 +4,22 @@ import {
   flatten,
   getsSignatureLine,
   isSignatureOverridden,
+  moveRequirement,
+  removeNode,
   toggleSignature,
+  updateNode,
 } from '../lib/requirements'
 import type { Requirement } from '../lib/requirements'
 
 /**
  * Flat, keyboard-friendly editor over the requirement tree. Rows mirror the
  * printed sheet exactly — same order, same indentation — so what you edit is
- * what prints. Indent/outdent re-parent a row within its sibling list.
+ * what prints.
+ *
+ * Every mutation here is a call into the tree algebra in `lib/requirements` —
+ * this file owns none of it, so the editor and the parser stay in agreement
+ * about what a requirement tree is.
  */
-
-/** Make the row the last child of its previous sibling. */
-function indent(nodes: Array<Requirement>, id: string): Array<Requirement> {
-  const i = nodes.findIndex((n) => n.id === id)
-
-  if (i === 0) return nodes // nothing above it to nest under
-  if (i > 0) {
-    const next = [...nodes]
-    const [moved] = next.splice(i, 1)
-    const prev = next[i - 1]
-    next[i - 1] = { ...prev, children: [...prev.children, moved] }
-    return next
-  }
-
-  return nodes.map((n) => ({ ...n, children: indent(n.children, id) }))
-}
-
-/**
- * Promote the row to sit just after its former parent. Rows that followed it
- * under that parent come along as its children, which is how outline editors
- * behave and keeps the printed order stable.
- */
-function outdent(nodes: Array<Requirement>, id: string): Array<Requirement> {
-  const pi = nodes.findIndex((n) => n.children.some((c) => c.id === id))
-
-  if (pi !== -1) {
-    const parent = nodes[pi]
-    const at = parent.children.findIndex((c) => c.id === id)
-    const moved = parent.children[at]
-    const trailing = parent.children.slice(at + 1)
-
-    const next = [...nodes]
-    next[pi] = { ...parent, children: parent.children.slice(0, at) }
-    next.splice(pi + 1, 0, {
-      ...moved,
-      children: [...moved.children, ...trailing],
-    })
-    return next
-  }
-
-  return nodes.map((n) => ({ ...n, children: outdent(n.children, id) }))
-}
-
-export function moveRequirement(
-  nodes: Array<Requirement>,
-  id: string,
-  direction: 'in' | 'out',
-): Array<Requirement> {
-  return direction === 'in' ? indent(nodes, id) : outdent(nodes, id)
-}
 
 export function RequirementEditor({
   requirements,
@@ -73,23 +30,12 @@ export function RequirementEditor({
 }) {
   const rows = flatten(requirements)
 
-  function patch(id: string, part: Partial<Requirement>) {
-    const walk = (nodes: Array<Requirement>): Array<Requirement> =>
-      nodes.map((n) =>
-        n.id === id
-          ? { ...n, ...part, children: n.children }
-          : { ...n, children: walk(n.children) },
-      )
-    onChange(walk(requirements))
-  }
+  const patch = (
+    id: string,
+    part: Partial<Omit<Requirement, 'id' | 'children'>>,
+  ) => onChange(updateNode(requirements, id, part))
 
-  function remove(id: string) {
-    const walk = (nodes: Array<Requirement>): Array<Requirement> =>
-      nodes
-        .filter((n) => n.id !== id)
-        .map((n) => ({ ...n, children: walk(n.children) }))
-    onChange(walk(requirements))
-  }
+  const remove = (id: string) => onChange(removeNode(requirements, id))
 
   if (!rows.length) {
     return (
