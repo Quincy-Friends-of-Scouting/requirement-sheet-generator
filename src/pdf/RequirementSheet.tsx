@@ -1,7 +1,7 @@
 import { Document, Image, Page, Text, View } from '@react-pdf/renderer'
 import { CONTENT_WIDTH, INCH, INDENT_STEP, styles } from './theme'
 import { flatten, getsSignatureLine } from '../lib/requirements'
-import type { SheetSpec } from '../lib/sheet'
+import type { SheetSpec, UploadedImage } from '../lib/sheet'
 
 /**
  * The one-page counselor sheet: badge header, scout identity blanks, one row
@@ -9,27 +9,35 @@ import type { SheetSpec } from '../lib/sheet'
  * checkboxes and counselor blanks.
  */
 
-function Watermark({ spec }: { spec: SheetSpec }) {
-  if (!spec.watermark) return null
+/** Where each page puts the watermark. The aspect ratio is the logo's, not a choice. */
+const SHEET_WATERMARK = { right: 1 * INCH, width: 300, height: 265 }
+const POSTER_WATERMARK = { right: 0.5 * INCH, width: 225, height: 199 }
+
+/**
+ * The faint logo behind a page.
+ *
+ * Takes the image and an opacity rather than the whole `SheetSpec` so the two
+ * call sites can differ — the poster prints it three times stronger, since it
+ * is read across a room rather than at arm's length.
+ */
+function Watermark({
+  image,
+  opacity,
+  placement,
+}: {
+  image: UploadedImage | null
+  opacity: number
+  placement: { right: number; width: number; height: number }
+}) {
+  if (!image) return null
   return (
     <Image
-      src={spec.watermark.dataUrl}
-      style={[
-        styles.watermark,
-        {
-          opacity: spec.watermarkOpacity,
-          bottom: 30,
-          right: MARGIN_RIGHT,
-          width: 300,
-          height: 265,
-        },
-      ]}
+      src={image.dataUrl}
+      style={[styles.watermark, { opacity, bottom: 30, ...placement }]}
       fixed
     />
   )
 }
-
-const MARGIN_RIGHT = 1 * INCH
 
 /** Three underlined blanks with their captions beneath — scout and counselor. */
 function SignatureFields({
@@ -90,7 +98,11 @@ function SheetPage({ spec }: { spec: SheetSpec }) {
 
   return (
     <Page size="LETTER" style={styles.page}>
-      <Watermark spec={spec} />
+      <Watermark
+        image={spec.watermark}
+        opacity={spec.watermarkOpacity}
+        placement={SHEET_WATERMARK}
+      />
 
       <View style={styles.header}>
         <View style={styles.headerImageSlot}>
@@ -133,22 +145,11 @@ function SheetPage({ spec }: { spec: SheetSpec }) {
 function PosterPage({ spec }: { spec: SheetSpec }) {
   return (
     <Page size="LETTER" style={styles.posterPage}>
-      {spec.watermark ? (
-        <Image
-          src={spec.watermark.dataUrl}
-          style={[
-            styles.watermark,
-            {
-              opacity: Math.min(1, spec.watermarkOpacity * 3),
-              bottom: 30,
-              right: 0.5 * INCH,
-              width: 225,
-              height: 199,
-            },
-          ]}
-          fixed
-        />
-      ) : null}
+      <Watermark
+        image={spec.watermark}
+        opacity={Math.min(1, spec.watermarkOpacity * 3)}
+        placement={POSTER_WATERMARK}
+      />
 
       <Text style={styles.posterTitle}>{spec.badgeName}</Text>
       {spec.badgeImage ? (
