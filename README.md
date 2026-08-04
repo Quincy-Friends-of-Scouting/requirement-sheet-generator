@@ -61,6 +61,15 @@ refuses regardless — a missing key can never leave the AI path ungated.
 `render:sample` is the layout smoke test — compare its output against
 `legacy/output/genealogy.pdf` after touching anything in `src/pdf/`.
 
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+The license covers the code in this repository. It does not extend to the merit
+badge requirement text that appears in `legacy/badges/` or that users paste into
+the app; those requirements are the property of the Boy Scouts of America and
+are reproduced here only as sample input.
+
 ## Deploying — AWS Amplify Hosting
 
 `pnpm build` emits `.amplify-hosting/` (Nitro's `aws_amplify` preset —
