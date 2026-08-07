@@ -24,3 +24,7 @@ CLAUDE.md
 # genealogy.pdf is kept as the layout reference the README compares against.
 legacy/output/*
 !legacy/output/genealogy.pdf
+
+# Scraped merit badge corpus from scouting.org — official BSA content that this
+# public repo deliberately does not republish. Regenerate with `pnpm scrape:badges`.
+data/

@@ -17,7 +17,9 @@
     "format": "prettier --write . && eslint --fix",
     "check": "prettier --check .",
     "typecheck": "tsc --noEmit",
-    "render:sample": "tsx scripts/render-sample.tsx"
+    "render:sample": "tsx scripts/render-sample.tsx",
+    "scrape:badges": "tsx scripts/scrape-badges.ts",
+    "check:badges": "tsx scripts/check-badges.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
