@@ -9,19 +9,19 @@
  *
  * **Text-form differences** are badges whose `requirementsText` does not parse
  * back to the shape the markup gave us. These are reported but do not fail,
- * because the loss is in the text rendering, not the scrape — the source
- * itself defeats a marker-only parser in two ways:
+ * because a difference here is the text parser's business, not the scrape's.
  *
- *   - "Option A—Beef Cattle" sub-headers carry no marker at all (Animal
- *     Science, Archery, Athletics, …), so nothing distinguishes them from
- *     wrapped prose once the tree is flattened to text.
- *   - Insect Study reuses "1."/"2." at depth three, under "(b)", which reads
- *     as a top-level marker.
+ * That second number is the useful one, and it is why this script is worth
+ * keeping: the corpus is the only place we know the true tree independently of
+ * parsing, because the scraper reads it from the page's own `mb-parent-N`
+ * pointers. Rendering those trees back to text and re-parsing therefore
+ * measures `requirement-tree` against 143 real documents — the regression test
+ * the package cannot carry itself, since it may not ship Scouting America's
+ * text. It found the fixed-rank ceiling that mis-nested 18 badges; it should
+ * now read 143/143, and a drop is a parser regression.
  *
- * The upshot for anything consuming this corpus: **read `requirements`, the
- * tree, not `requirementsText`.** The text exists for pasting into the app by
- * hand; the tree came straight off the page's own parent pointers and is
- * lossless.
+ * Consumers should still read `requirements`, the tree, rather than
+ * re-parsing `requirementsText` — it is authoritative and free.
  *
  *   pnpm check:badges
  */
