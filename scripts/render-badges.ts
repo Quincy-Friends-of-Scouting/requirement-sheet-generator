@@ -8,8 +8,17 @@
  *   pnpm render:badges            # from data/simplified (condensed)
  *   pnpm render:badges badges     # from data/badges (official wording)
  *
- * PDFs land in `data/sheets/<source>/`. Page counts come from `pdfinfo`
- * (poppler); without it the render still runs and the count is skipped.
+ * Each badge gets two separate files — the sheet in `data/sheets/<source>/` and
+ * the table sign in `data/posters/<source>/`. Both carry the watermark from
+ * `assets/watermark.png` if one is present; without it they render unmarked.
+ *
+ * The poster multiplies watermark opacity by three internally, so a value tuned
+ * for the dense sheet can dominate the mostly-empty sign. Override to taste:
+ *
+ *   WATERMARK_OPACITY=0.06 pnpm render:badges
+ *
+ * Page counts come from `pdfinfo` (poppler); without it the render still runs
+ * and the count is skipped.
  */
 import { execFileSync } from 'node:child_process'
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
@@ -18,7 +27,7 @@ import path from 'node:path'
 import { createElement } from 'react'
 import { renderToFile } from '@react-pdf/renderer'
 import { withIds } from 'requirement-tree'
-import { RequirementSheet } from '../src/pdf/RequirementSheet'
+import { BadgePoster, RequirementSheet } from '../src/pdf/RequirementSheet'
 import { DEFAULT_SHEET } from '../src/lib/sheet'
 import type { DocumentProps } from '@react-pdf/renderer'
 
@@ -28,6 +37,7 @@ const DATA = path.join(ROOT, 'data')
 const source = process.argv[2] === 'badges' ? 'badges' : 'simplified'
 const SRC_DIR = path.join(DATA, source)
 const OUT_DIR = path.join(DATA, 'sheets', source)
+const POSTER_DIR = path.join(DATA, 'posters', source)
 
 /** @react-pdf takes PNG and JPEG only — the corpus is normalised to PNG. */
 async function badgeImage(slug: string) {
@@ -37,6 +47,33 @@ async function badgeImage(slug: string) {
     name: `${slug}.png`,
     dataUrl: `data:image/png;base64,${(await readFile(file)).toString('base64')}`,
   }
+}
+
+/**
+ * The troop mark printed faintly behind both documents.
+ *
+ * It lives in `assets/`, not `data/` — `data/` is gitignored because it holds
+ * Scouting America's requirement text, which this public repo does not
+ * republish. A troop's own logo is a different question and belongs in the
+ * repo, so the sheets are reproducible from a clean checkout.
+ *
+ * PNG or JPEG only. If yours arrives as WebP:
+ *   sips -s format png assets/watermark.webp --out assets/watermark.png
+ */
+async function watermark() {
+  for (const [ext, mime] of [
+    ['png', 'image/png'],
+    ['jpg', 'image/jpeg'],
+    ['jpeg', 'image/jpeg'],
+  ]) {
+    const file = path.join(ROOT, 'assets', `watermark.${ext}`)
+    if (!existsSync(file)) continue
+    return {
+      name: `watermark.${ext}`,
+      dataUrl: `data:${mime};base64,${(await readFile(file)).toString('base64')}`,
+    }
+  }
+  return null
 }
 
 function pageCount(file: string): number | null {
@@ -50,6 +87,14 @@ function pageCount(file: string): number | null {
 
 async function main() {
   await mkdir(OUT_DIR, { recursive: true })
+  await mkdir(POSTER_DIR, { recursive: true })
+
+  const mark = await watermark()
+  console.log(
+    mark
+      ? `watermark: ${mark.name}`
+      : 'no watermark found — add assets/watermark.png (PNG or JPEG)',
+  )
   const files = (await readdir(SRC_DIR))
     .filter((f) => f.endsWith('.json'))
     .sort()
@@ -63,16 +108,30 @@ async function main() {
     const badge = JSON.parse(await readFile(path.join(SRC_DIR, file), 'utf8'))
     const out = path.join(OUT_DIR, `${badge.slug}.pdf`)
 
+    const spec = {
+      ...DEFAULT_SHEET,
+      badgeName: badge.name,
+      requirements: withIds(badge.requirements),
+      badgeImage: await badgeImage(badge.slug),
+      watermark: mark,
+      watermarkOpacity: Number(
+        process.env.WATERMARK_OPACITY ?? DEFAULT_SHEET.watermarkOpacity,
+      ),
+    }
+
     await renderToFile(
       createElement(RequirementSheet, {
-        spec: {
-          ...DEFAULT_SHEET,
-          badgeName: badge.name,
-          requirements: withIds(badge.requirements),
-          badgeImage: await badgeImage(badge.slug),
-        },
+        spec,
       }) as React.ReactElement<DocumentProps>,
       out,
+    )
+    // The poster is a separate document, not a second page — a counselor prints
+    // the sheet per Scout and the sign once, so they never want them stapled.
+    await renderToFile(
+      createElement(BadgePoster, {
+        spec,
+      }) as React.ReactElement<DocumentProps>,
+      path.join(POSTER_DIR, `${badge.slug}.pdf`),
     )
     rendered += 1
 
@@ -89,7 +148,7 @@ async function main() {
   }
 
   console.log(
-    `\nrendered ${rendered} sheets from data/${source} to ${path.relative(ROOT, OUT_DIR)}`,
+    `\nrendered ${rendered} sheets and ${rendered} posters from data/${source}\n  sheets:  ${path.relative(ROOT, OUT_DIR)}\n  posters: ${path.relative(ROOT, POSTER_DIR)}`,
   )
   if (!counted) {
     console.log('pdfinfo not available — page counts skipped')
