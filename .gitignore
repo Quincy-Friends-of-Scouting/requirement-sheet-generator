@@ -29,6 +29,10 @@ legacy/output/*
 # public repo deliberately does not republish. Regenerate with `pnpm scrape:badges`.
 data/
 
+# Rendered sheets and posters — same reason as data/. Regenerate with
+# `pnpm render:badges`.
+export/
+
 # The troop's own watermark. Kept local rather than published with the tool —
 # render-badges.ts treats its absence as normal and renders unmarked.
 assets/watermark.*

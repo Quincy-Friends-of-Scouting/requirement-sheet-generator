@@ -8,9 +8,10 @@
  *   pnpm render:badges            # from data/simplified (condensed)
  *   pnpm render:badges badges     # from data/badges (official wording)
  *
- * Each badge gets two separate files — the sheet in `data/sheets/<source>/` and
- * the table sign in `data/posters/`. Both carry the watermark from
- * `assets/watermark.png` if one is present; without it they render unmarked.
+ * Each badge gets two separate files — the sheet in `export/badges/<original|
+ * simplified>/` and the table sign in `export/posters/`. Both carry the
+ * watermark from `assets/watermark.png` if one is present; without it they
+ * render unmarked.
  *
  * The poster's badge name and image don't depend on requirement wording, so
  * it isn't split per source — a poster already on disk is skipped rather than
@@ -37,11 +38,16 @@ import type { DocumentProps } from '@react-pdf/renderer'
 
 const ROOT = path.join(import.meta.dirname, '..')
 const DATA = path.join(ROOT, 'data')
+const EXPORT_DIR = path.join(ROOT, 'export')
 
 const source = process.argv[2] === 'badges' ? 'badges' : 'simplified'
 const SRC_DIR = path.join(DATA, source)
-const OUT_DIR = path.join(DATA, 'sheets', source)
-const POSTER_DIR = path.join(DATA, 'posters')
+const OUT_DIR = path.join(
+  EXPORT_DIR,
+  'badges',
+  source === 'badges' ? 'original' : 'simplified',
+)
+const POSTER_DIR = path.join(EXPORT_DIR, 'posters')
 
 /** @react-pdf takes PNG and JPEG only — the corpus is normalised to PNG. */
 async function badgeImage(slug: string) {
