@@ -339,7 +339,9 @@ function toIndentedText(nodes: Array<ScrapedRequirement>, depth = 0): string {
   return nodes
     .map(
       (n) =>
-        `${'  '.repeat(depth)}${n.label} ${n.text}`.trimEnd() +
+        // Unlabelled rows ("Option A—…") would otherwise emit a stray leading
+        // space and knock the indent off by one.
+        `${'  '.repeat(depth)}${[n.label, n.text].filter(Boolean).join(' ')}`.trimEnd() +
         (n.children.length ? `\n${toIndentedText(n.children, depth + 1)}` : ''),
     )
     .join('\n')
