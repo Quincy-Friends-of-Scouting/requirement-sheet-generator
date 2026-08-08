@@ -1,4 +1,7 @@
-import { StyleSheet } from '@react-pdf/renderer'
+import { Font, StyleSheet } from '@react-pdf/renderer'
+
+/** Wrap on whole words only — a mid-word hyphen on the poster title reads badly. */
+Font.registerHyphenationCallback((word) => [word])
 
 /**
  * Geometry ported from the original `sign.py`. reportlab worked in points

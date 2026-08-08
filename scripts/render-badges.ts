@@ -9,8 +9,12 @@
  *   pnpm render:badges badges     # from data/badges (official wording)
  *
  * Each badge gets two separate files — the sheet in `data/sheets/<source>/` and
- * the table sign in `data/posters/<source>/`. Both carry the watermark from
+ * the table sign in `data/posters/`. Both carry the watermark from
  * `assets/watermark.png` if one is present; without it they render unmarked.
+ *
+ * The poster's badge name and image don't depend on requirement wording, so
+ * it isn't split per source — a poster already on disk is skipped rather than
+ * re-rendered when the other source runs.
  *
  * The poster multiplies watermark opacity by three internally, so a value tuned
  * for the dense sheet can dominate the mostly-empty sign. Override to taste:
@@ -37,7 +41,7 @@ const DATA = path.join(ROOT, 'data')
 const source = process.argv[2] === 'badges' ? 'badges' : 'simplified'
 const SRC_DIR = path.join(DATA, source)
 const OUT_DIR = path.join(DATA, 'sheets', source)
-const POSTER_DIR = path.join(DATA, 'posters', source)
+const POSTER_DIR = path.join(DATA, 'posters')
 
 /** @react-pdf takes PNG and JPEG only — the corpus is normalised to PNG. */
 async function badgeImage(slug: string) {
@@ -104,10 +108,13 @@ async function main() {
   const overflow: Array<{ slug: string; pages: number; rows: number }> = []
   let counted = 0
   let rendered = 0
+  let postersRendered = 0
+  let postersSkipped = 0
 
   for (const file of files) {
     const badge = JSON.parse(await readFile(path.join(SRC_DIR, file), 'utf8'))
     const out = path.join(OUT_DIR, `${badge.slug}.pdf`)
+    const posterOut = path.join(POSTER_DIR, `${badge.slug}.pdf`)
 
     const spec = {
       ...DEFAULT_SHEET,
@@ -128,12 +135,19 @@ async function main() {
     )
     // The poster is a separate document, not a second page — a counselor prints
     // the sheet per Scout and the sign once, so they never want them stapled.
-    await renderToFile(
-      createElement(BadgePoster, {
-        spec,
-      }) as React.ReactElement<DocumentProps>,
-      path.join(POSTER_DIR, `${badge.slug}.pdf`),
-    )
+    // Its content doesn't depend on requirement wording, so once it exists for
+    // a slug (from either source) there's no need to re-render it.
+    if (existsSync(posterOut)) {
+      postersSkipped += 1
+    } else {
+      await renderToFile(
+        createElement(BadgePoster, {
+          spec,
+        }) as React.ReactElement<DocumentProps>,
+        posterOut,
+      )
+      postersRendered += 1
+    }
     rendered += 1
 
     const pages = pageCount(out)
@@ -149,7 +163,7 @@ async function main() {
   }
 
   console.log(
-    `\nrendered ${rendered} sheets and ${rendered} posters from data/${source}\n  sheets:  ${path.relative(ROOT, OUT_DIR)}\n  posters: ${path.relative(ROOT, POSTER_DIR)}`,
+    `\nrendered ${rendered} sheets from data/${source}, ${postersRendered} posters (${postersSkipped} already present)\n  sheets:  ${path.relative(ROOT, OUT_DIR)}\n  posters: ${path.relative(ROOT, POSTER_DIR)}`,
   )
   if (!counted) {
     console.log('pdfinfo not available — page counts skipped')
