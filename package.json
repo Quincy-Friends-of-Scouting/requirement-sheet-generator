@@ -19,7 +19,10 @@
     "typecheck": "tsc --noEmit",
     "render:sample": "tsx scripts/render-sample.tsx",
     "scrape:badges": "tsx scripts/scrape-badges.ts",
-    "check:badges": "tsx scripts/check-badges.ts"
+    "check:badges": "tsx scripts/check-badges.ts",
+    "simplify:prep": "tsx scripts/simplify-prep.ts",
+    "simplify:apply": "tsx scripts/simplify-apply.ts",
+    "render:badges": "tsx scripts/render-badges.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
