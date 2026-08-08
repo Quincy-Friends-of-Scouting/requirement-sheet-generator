@@ -1,8 +1,13 @@
 # Condensing requirements — the prompt
 
 The instructions for the condensing pass. Kept as a file, not inline in an
-agent call, so runs are reproducible and the rules can be lifted into
-`src/server/simplify.ts` rather than diverging from it.
+agent call, so runs are reproducible.
+
+**Rules 1–3 are shared with the app's interactive path**, `src/server/simplify.ts`,
+which carries the same three rules in the same order. Only the protocol differs:
+here the model answers a numbered worksheet; there it returns the tree as
+structured output. Change one, change both — a counselor should get the same
+rewrite whether it came from a batch run or the paste box.
 
 **Every example below is invented.** Real requirements are Scouting America's
 text and this repo is public, so the fixtures here exercise the same shapes —
