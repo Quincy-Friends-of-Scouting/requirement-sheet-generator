@@ -54,7 +54,6 @@ interface IndexEntry {
   slug: string
   name: string
   url: string
-  eagleRequired: boolean
   /** The site's own grouping: "outdoor", "stem", "trades", … */
   category: string
   /** Site flag whose meaning is undocumented; carried through verbatim. */
@@ -190,10 +189,17 @@ async function downloadImage(url: string, file: string): Promise<boolean> {
 function parseIndex(html: string): Array<IndexEntry> {
   const bySlug = new Map<string, IndexEntry>()
   for (const article of html.split('<article ').slice(1)) {
-    const link =
-      /<a href="(https:\/\/www\.scouting\.org\/merit-badges\/([a-z0-9-]+)\/)">([\s\S]*?)<\/a>/.exec(
-        article,
-      )
+    // An Eagle-required card links to its own badge page twice: once
+    // wrapping the "Eagle Scout insignia" ribbon icon, then again — as the
+    // card's title — wrapping the actual name. Both anchors share the same
+    // href, and the icon always sorts first, so the title is whichever
+    // match comes last.
+    const links = [
+      ...article.matchAll(
+        /<a href="(https:\/\/www\.scouting\.org\/merit-badges\/([a-z0-9-]+)\/)">([\s\S]*?)<\/a>/g,
+      ),
+    ]
+    const link = links.at(-1)
     if (!link) continue
     const [, url, slug, rawName] = link
     if (bySlug.has(slug)) continue // the grid repeats a couple of cards
@@ -201,8 +207,6 @@ function parseIndex(html: string): Array<IndexEntry> {
       slug,
       name: toPlainText(rawName),
       url,
-      // "…-not" is the negative variant, so the lookahead matters.
-      eagleRequired: /mb-card-eagle-required(?!-not)/.test(article),
       category: /mb_card_grouping-([a-z0-9-]+)/.exec(article)?.[1] ?? '',
       drg: /mb-card-drg(?!-not)/.test(article),
       cardImage:
