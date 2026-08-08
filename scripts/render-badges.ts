@@ -52,12 +52,13 @@ async function badgeImage(slug: string) {
 /**
  * The troop mark printed faintly behind both documents.
  *
- * It lives in `assets/`, not `data/` — `data/` is gitignored because it holds
- * Scouting America's requirement text, which this public repo does not
- * republish. A troop's own logo is a different question and belongs in the
- * repo, so the sheets are reproducible from a clean checkout.
+ * Drop yours at `assets/watermark.png` (or .jpg). It is gitignored, like the
+ * scraped corpus and for the same reason: this repo publishes the tool, not one
+ * troop's material. So a clean checkout has no watermark, and that is the normal
+ * case rather than an error — the sheets render unmarked and say so, and whoever
+ * clones this supplies their own mark.
  *
- * PNG or JPEG only. If yours arrives as WebP:
+ * PNG or JPEG only — @react-pdf accepts nothing else. If yours arrives as WebP:
  *   sips -s format png assets/watermark.webp --out assets/watermark.png
  */
 async function watermark() {

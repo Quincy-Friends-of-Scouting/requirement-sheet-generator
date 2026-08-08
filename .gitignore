@@ -28,3 +28,7 @@ legacy/output/*
 # Scraped merit badge corpus from scouting.org — official BSA content that this
 # public repo deliberately does not republish. Regenerate with `pnpm scrape:badges`.
 data/
+
+# The troop's own watermark. Kept local rather than published with the tool —
+# render-badges.ts treats its absence as normal and renders unmarked.
+assets/watermark.*
