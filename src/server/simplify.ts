@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createServerFn } from '@tanstack/react-start'
 import { auth } from '@clerk/tanstack-react-start/server'
+import { condenseSystemPrompt } from 'requirement-tree/condense'
 import { z } from 'zod'
 import {
   parseRequirements,
@@ -23,41 +24,18 @@ import type { Requirement } from '../lib/requirements'
 const MODEL = 'claude-haiku-4-5'
 
 /**
- * The rule set is shared with the batch pass — see `scripts/simplify-prompt.md`,
- * which carries the same three rules plus the evidence behind them. Only the
- * protocol differs: there the model answers a numbered worksheet, here it
- * returns the tree as structured output. Change one, change both.
+ * The rules themselves live in `requirement-tree/condense`, alongside the
+ * schema they describe — the batch pass and the sign-off app read the same
+ * text, so a counselor gets the same rewrite whichever produced it. What stays
+ * here is only what is ours: what the sheet is for, and how wide it is.
  *
- * **The order is load-bearing.** Rules 1 and 2 are constraints; 3 is a goal
- * pursued only within them. An earlier version led with "under 110 characters"
- * and listed the specifics fourth — and the model duly shed counts, dropped
- * cross-references, and lowercased the ALL-CAPS words that mark a counted
- * choice, because it optimised what it was told first. Do not reorder these.
+ * 110 characters is one printed line of the requirement column at the sheet's
+ * body size. Changing the layout is what should change this number.
  */
-const SYSTEM = `You reformat Scouting America merit badge requirements so they fit on a one-page counselor sign-off sheet.
-
-You are given the official requirement text. Return the same requirements, restructured as a tree and condensed. The rules are ordered: 1 and 2 are hard constraints, 3 is a goal pursued only within them.
-
-1. WHAT MUST SURVIVE. These are official requirements a Scout is graded against, so a line that loses one of these has changed the requirement, not shortened it.
-- Every specific: counts, durations, distances, measurements, scores, named items. "six of the 15 varieties" must not become "several varieties". A spelled-out number may become a digit; it must not vanish.
-- Cross-references to other requirements, by number. They read like filler and are not: they say WHICH thing. "Pick ONE of the sites you surveyed in requirement 4(a)" must not become "Pick ONE" - nobody can tell which site. Abbreviate instead: "Pick ONE of the sites from 4(a)".
-- ALL-CAPS emphasis exactly as capitalized: ONE, TWO, THREE, ALL, EACH, NOT. Lowercasing "discuss TWO of the following" turns a counted choice the counselor ticks into ordinary description.
-- Official terminology and proper nouns, as written.
-- Choice structure: keep "Do ONE of the following" and "Do ALL of the following" lead-ins on the parent item, and write "OR" in capitals between alternatives.
-Only one thing is safe to drop: a parenthetical restatement of a value in another unit, so "a 40-centimeter (16-inch) target" may become "a 40-centimeter target". Never drop the primary value.
-
-2. KEEP EVERY REQUIREMENT, IN PLACE. Preserve every requirement and sub-requirement, the original order, and the original numbering. Put the marker ("1.", "a.", "(1)") in "label" and the prose in "text".
-- Never merge two requirements into one, never drop one, never invent one, never reorder.
-- A bare lead-in such as "Do the following:" is itself a requirement and keeps its own node. Swallowing it into the item below shifts everything after it out of step, which looks correct and is not.
-- A parent keeps only its lead-in; its detail belongs to its children.
-- Reading material ("Resource: ...", "See also ...", a bare link) is not a requirement - leave it out. A numbered requirement that happens to be ABOUT resources is a requirement and must be kept.
-
-3. SHORTEN, within rules 1 and 2. Condense each requirement to ONE sentence, ideally under 110 characters, so it fits a single printed line.
-- If you cannot fit it without breaking rule 1, let the line run long. A requirement that wraps onto a second line is fine; a requirement that lost its count is not.
-- Do not compress by merging requirements. How many rows fit on the page is decided elsewhere; your unit of work is the single requirement.
-- Drop filler like "with your counselor" only when it does not change what the Scout must do.
-- If a requirement is already short, keep it unchanged.
-- Use plain ASCII punctuation.`
+const SYSTEM = condenseSystemPrompt({
+  task: 'You reformat Scouting America merit badge requirements so they fit on a one-page counselor sign-off sheet.',
+  maxChars: 110,
+})
 
 const inputSchema = z.object({
   text: z.string().min(1).max(20_000),
