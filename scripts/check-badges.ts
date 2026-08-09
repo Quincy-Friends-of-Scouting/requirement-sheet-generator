@@ -28,25 +28,17 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import { countNodes, parseRequirements } from 'requirement-tree'
+import type { RequirementInput } from 'requirement-tree'
 
 const DATA = path.join(import.meta.dirname, '..', 'data')
 const BADGE_DIR = path.join(DATA, 'badges')
 
-interface Node {
-  label: string
-  text: string
-  children: Array<Node>
-}
-
 interface Badge {
   slug: string
   patchFile: string | null
-  requirements: Array<Node>
+  requirements: Array<RequirementInput>
   requirementsText: string
 }
-
-const countScraped = (nodes: Array<Node>): number =>
-  nodes.reduce((n, c) => n + 1 + countScraped(c.children), 0)
 
 function main() {
   const files = readdirSync(BADGE_DIR)
@@ -76,7 +68,7 @@ function main() {
     }
 
     const parsed = parseRequirements(badge.requirementsText)
-    const scrapedNodes = countScraped(reqs)
+    const scrapedNodes = countNodes(reqs)
     if (parsed.length === reqs.length && countNodes(parsed) === scrapedNodes) {
       roundTripped++
     } else {

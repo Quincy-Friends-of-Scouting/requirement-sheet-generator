@@ -43,7 +43,7 @@ importers:
         version: 19.2.8(react@19.2.8)
       requirement-tree:
         specifier: github:Quincy-Friends-of-Scouting/requirement-tree
-        version: https://codeload.github.com/Quincy-Friends-of-Scouting/requirement-tree/tar.gz/45ff3bb0b78454fc4ae30792383317a6ade46d9d
+        version: https://codeload.github.com/Quincy-Friends-of-Scouting/requirement-tree/tar.gz/f0bbe2ff3f56582a58008caf7fde4536c94dca1a
       tailwindcss:
         specifier: ^4.1.18
         version: 4.3.3
@@ -2378,8 +2378,8 @@ packages:
     resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
     engines: {node: '>=0.10.0'}
 
-  requirement-tree@https://codeload.github.com/Quincy-Friends-of-Scouting/requirement-tree/tar.gz/45ff3bb0b78454fc4ae30792383317a6ade46d9d:
-    resolution: {tarball: https://codeload.github.com/Quincy-Friends-of-Scouting/requirement-tree/tar.gz/45ff3bb0b78454fc4ae30792383317a6ade46d9d}
+  requirement-tree@https://codeload.github.com/Quincy-Friends-of-Scouting/requirement-tree/tar.gz/f0bbe2ff3f56582a58008caf7fde4536c94dca1a:
+    resolution: {tarball: https://codeload.github.com/Quincy-Friends-of-Scouting/requirement-tree/tar.gz/f0bbe2ff3f56582a58008caf7fde4536c94dca1a}
     version: 0.1.0
 
   resolve-from@4.0.0:
@@ -5008,7 +5008,7 @@ snapshots:
 
   require-from-string@2.0.2: {}
 
-  requirement-tree@https://codeload.github.com/Quincy-Friends-of-Scouting/requirement-tree/tar.gz/45ff3bb0b78454fc4ae30792383317a6ade46d9d:
+  requirement-tree@https://codeload.github.com/Quincy-Friends-of-Scouting/requirement-tree/tar.gz/f0bbe2ff3f56582a58008caf7fde4536c94dca1a:
     dependencies:
       zod: 4.4.3
 

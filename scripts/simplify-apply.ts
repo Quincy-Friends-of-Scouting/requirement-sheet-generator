@@ -13,32 +13,28 @@
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
+import { flatten } from 'requirement-tree'
+import type { RequirementInput } from 'requirement-tree'
 
 const ROOT = path.join(import.meta.dirname, '..')
 const DATA = path.join(ROOT, 'data')
 const BADGE_DIR = path.join(DATA, 'badges')
 const OUT_DIR = path.join(DATA, 'simplified')
 
-interface Node {
-  label: string
-  text: string
-  children: Array<Node>
-}
-
-function flatten(nodes: Array<Node>, out: Array<Node> = []): Array<Node> {
-  for (const node of nodes) {
-    out.push(node)
-    flatten(node.children, out)
-  }
-  return out
-}
+/**
+ * Print order, which is the order the worksheet numbered them in. Depth and
+ * sibling position are what an editor needs and this script does not, so the
+ * rows are unwrapped back to bare nodes.
+ */
+const inPrintOrder = (nodes: Array<RequirementInput>) =>
+  flatten(nodes).map((row) => row.requirement)
 
 /** Rebuild with the same shape, taking each node's new text by print order. */
 function rewrite(
-  nodes: Array<Node>,
+  nodes: Array<RequirementInput>,
   texts: Map<number, string>,
   seq = { i: 0 },
-): Array<Node> {
+): Array<RequirementInput> {
   return nodes.map((node) => {
     seq.i += 1
     return {
@@ -175,7 +171,7 @@ async function main() {
       if (m && m[2].trim()) texts.set(Number(m[1]), m[2].trim())
     }
 
-    const original = flatten(badge.requirements)
+    const original = inPrintOrder(badge.requirements)
     const unanswered = original
       .map((_, i) => i + 1)
       .filter((n) => !texts.has(n))
@@ -188,7 +184,7 @@ async function main() {
     }
 
     const requirements = rewrite(badge.requirements, texts)
-    const rewritten = flatten(requirements)
+    const rewritten = inPrintOrder(requirements)
 
     // Alignment first: if the answers drifted, every "dropped a number" report
     // below is a symptom of that one fault, not dozens of separate ones.

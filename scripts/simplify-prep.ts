@@ -16,29 +16,18 @@
  */
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { flatten } from 'requirement-tree'
 import { condenseRules } from 'requirement-tree/condense'
+import type { RequirementInput } from 'requirement-tree'
 
 const DATA = path.join(import.meta.dirname, '..', 'data')
 const BADGE_DIR = path.join(DATA, 'badges')
 const OUT_DIR = path.join(DATA, 'to-simplify')
 
-interface Node {
-  label: string
-  text: string
-  children: Array<Node>
-}
-
-/** Flatten in print order, numbering from 1 — the key the model answers with. */
-export function flatten(
-  nodes: Array<Node>,
-  depth = 0,
-  out: Array<{ n: number; depth: number; node: Node }> = [],
-): Array<{ n: number; depth: number; node: Node }> {
-  for (const node of nodes) {
-    out.push({ n: out.length + 1, depth, node })
-    flatten(node.children, depth + 1, out)
-  }
-  return out
+interface Badge {
+  slug: string
+  name: string
+  requirements: Array<RequirementInput>
 }
 
 /**
@@ -109,14 +98,20 @@ async function main() {
   const slugs: Array<string> = []
   let lines = 0
   for (const file of files) {
-    const badge = JSON.parse(await readFile(path.join(BADGE_DIR, file), 'utf8'))
+    const badge: Badge = JSON.parse(
+      await readFile(path.join(BADGE_DIR, file), 'utf8'),
+    )
     const rows = flatten(badge.requirements)
     slugs.push(badge.slug)
     lines += rows.length
+    // The number is the row's position in print order, counting from 1 — the
+    // key the model answers with, and what simplify-apply puts the tree back
+    // around.
     const body = rows
       .map(
-        ({ n, depth, node }) =>
-          `[${n}]${'  '.repeat(depth)} ${[node.label, node.text].filter(Boolean).join(' ')}`,
+        ({ requirement, depth }, i) =>
+          `[${i + 1}]${'  '.repeat(depth)} ` +
+          `${[requirement.label, requirement.text].filter(Boolean).join(' ')}`,
       )
       .join('\n')
     await writeFile(
